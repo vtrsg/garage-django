@@ -2,22 +2,18 @@ from django.db import models
 from django.utils import timezone
 
 class User(models.Model):
-    UserId = models.AutoField(primary_key=True)
     Name = models.CharField(max_length=100)
     Email = models.EmailField(max_length=100, blank=True)
     Phone = models.CharField(max_length=50)
     Cpf = models.CharField(max_length=11, unique=True)
 
 class Brand(models.Model):
-    BrandId = models.AutoField(primary_key=True)
     Name = models.CharField(max_length=100)
 
 class ModelType(models.Model):
-    ModelId = models.AutoField(primary_key=True)
     Name = models.CharField(max_length=100)
 
 class Year(models.Model):
-    YearId = models.AutoField(primary_key=True)
     YearName = models.CharField(max_length=100)
 
 class Car(models.Model):
@@ -49,7 +45,6 @@ class Car(models.Model):
         (2, 'Híbrido'),
     )
 
-    CarId = models.AutoField(primary_key=True)
     Name = models.CharField(max_length=100)
     Brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, blank=True, null=True)
     Model = models.ForeignKey(ModelType, on_delete=models.SET_NULL, blank=True, null=True)
@@ -63,5 +58,5 @@ class Car(models.Model):
     Seat = models.PositiveSmallIntegerField(choices=SEATS)
     Fuel = models.PositiveSmallIntegerField(choices=FUEL)
     CreatedDate = models.DateField(default=timezone.now)
-    User = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
+    User = models.ForeignKey(User, on_delete=models.CASCADE)
     ImageFile = models.CharField(max_length=100)

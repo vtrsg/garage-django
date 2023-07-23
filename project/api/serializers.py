@@ -10,61 +10,29 @@ from .models import (
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = (
-            'UserId',
-            'Name',
-            'Email',
-            'Phone',
-            'Cpf,'
-        )
+        fields = '__all__'
 
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
-        fields = (
-            'BrandId',
-            'Name',
-        )
+        fields = '__all__'
 
 
 class ModelTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ModelType
-        fields = (
-            'ModelId',
-            'Name',
-        )
+        fields = '__all__'
 
 
 class YearSerializer(serializers.ModelSerializer):
     class Meta:
         model = Year
-        fields = (
-            'YearId',
-            'Name',
-        )
+        fields = '__all__'
 
 
 class CarSerializer(serializers.ModelSerializer):
     class Meta:
         model = Car
-        fields = (
-            'CarId',
-            'Name',
-            'Brand',
-            'Model',
-            'Year',
-            'Location',
-            'Transmission',
-            'Price',
-            'DiscountPrice',
-            'Mileage',
-            'Color',
-            'Seat',
-            'Fuel',
-            'CreatedDate',
-            'User',
-            'ImageFile,'
-        )
+        fields = '__all__'
 
