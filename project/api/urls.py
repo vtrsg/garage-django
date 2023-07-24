@@ -1,10 +1,14 @@
 from django.urls import path
+from django.conf.urls.static import static
+from django.conf import settings
+
 from .views import (
     UserApi,
     BrandApi,
     ModelTypeApi,
     YearApi,
     CarApi,
+    SaveFile,
 )
 
 urlpatterns = [
@@ -18,4 +22,6 @@ urlpatterns = [
     path('ano/<int:id>/', YearApi, name='year-detail'),
     path('carro/', CarApi, name='car-list'),
     path('carro/<int:id>/', CarApi, name='car-detail'),
-]
+
+    path('SaveFile/', SaveFile, name='save_file'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,8 +1,12 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.views.decorators.csrf import csrf_exempt
-from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
+from django.core.files.storage import default_storage
 
+from rest_framework.parsers import JSONParser
+
+
+from .utils import save_car_images
 from .models import (
     User,
     Brand,
@@ -10,7 +14,6 @@ from .models import (
     Year,
     Car,
 )
-
 from .serializers import (
     UserSerializer,
     BrandSerializer,
@@ -28,7 +31,7 @@ def UserApi(req, id=0):
         return JsonResponse(users_serializer.data, safe=False)    
     elif req.method == 'POST':
         user_data = JSONParser().parse(req)
-        user_serializer = UserSerializer(data=user_data)
+        user_serializer = UserSerializer(data=user_data, partial=True)
 
         if user_serializer.is_valid():
             user_serializer.save()
@@ -78,7 +81,7 @@ def BrandApi(req, id=0):
         brand_data = JSONParser().parse(req)
         brand = Brand.objects.get(id=id)
         
-        brand_serializer = BrandSerializer(brand, data=brand_data, partial=True)
+        brand_serializer = BrandSerializer(brand, data=brand_data)
         if brand_serializer.is_valid():
             brand_serializer.save()
 
@@ -117,7 +120,7 @@ def ModelTypeApi(req, id=0):
         model_data = JSONParser().parse(req)
         model = ModelType.objects.get(id=id)
         
-        model_serializer = ModelTypeSerializer(model, data=model_data, partial=True)
+        model_serializer = ModelTypeSerializer(model, data=model_data)
         if model_serializer.is_valid():
             model_serializer.save()
 
@@ -156,7 +159,7 @@ def YearApi(req, id=0):
         year_data = JSONParser().parse(req)
         year = Year.objects.get(id=id)
         
-        year_serializer = YearSerializer(year, data=year_data, partial=True)
+        year_serializer = YearSerializer(year, data=year_data)
         if year_serializer.is_valid():
             year_serializer.save()
 
@@ -182,30 +185,53 @@ def CarApi(req, id=0):
 
         return JsonResponse(cars_serializer.data, safe=False)    
     elif req.method == 'POST':
-        car_data = JSONParser().parse(req)
-        car_serializer = CarSerializer(data=car_data)
+        car_data = {
+            'Name': req.POST.get('Name', ''),
+            'Brand': req.POST.get('Brand', ''),
+            'Model': req.POST.get('Model', ''),
+            'Year': req.POST.get('Year', ''),
+            'Location': req.POST.get('Location', ''),
+            'Transmission': req.POST.get('Transmission', ''),
+            'Price': req.POST.get('Price', ''),
+            'DiscountPrice': req.POST.get('DiscountPrice', ''),
+            'Mileage': req.POST.get('Mileage', ''),
+            'Color': req.POST.get('Color', ''),
+            'Seat': req.POST.get('Seat', ''),
+            'Fuel': req.POST.get('Fuel', ''),
+            'User': req.POST.get('User', ''),
+        }
 
+        car_images = {
+            'front': req.FILES.get('front', None),
+            'left': req.FILES.get('left', None),
+            'right': req.FILES.get('right', None),
+            'back': req.FILES.get('back', None),
+            'inside': req.FILES.get('inside', None),
+        }
+
+        car_folder = save_car_images(car_data, car_images) 
+        car_data['ImageFile'] = car_folder
+        
+        car_data = {key: value for key, value in car_data.items() if value}
+        
+        car_serializer = CarSerializer(data=car_data, partial=True)
         if car_serializer.is_valid():
-            car_serializer.save()
-
+            car = car_serializer.save()
+            
             return JsonResponse('Added successfully!!', safe=False)
         
-        return JsonResponse('Failed add!!', safe=False) 
+        return JsonResponse(car_serializer.errors, status=400, safe=False) 
     elif req.method == 'PUT':
         car_data = JSONParser().parse(req)
-        print(car_data)
         car = Car.objects.get(id=id)
-        print(id)
-        print(car)
         
         car_serializer = CarSerializer(car, data=car_data, partial=True)
-        print(car_serializer.is_valid())
         if car_serializer.is_valid():
             car_serializer.save()
 
             return JsonResponse('Updated successfully!!', safe=False)
         
-        return JsonResponse('Failed update!!', safe=False) 
+        return JsonResponse('Failed update!!', safe=False)   
     elif req.method == 'DELETE':
         try:
             car = Car.objects.get(id=id)
@@ -216,3 +242,10 @@ def CarApi(req, id=0):
             return JsonResponse('Car not found.', status=404, safe=False)
     else:
         return JsonResponse('Invalid request.', status=400, safe=False)
+    
+@csrf_exempt
+def SaveFile(req):
+    file=req.FILES['uploadedFile']
+    file_name = default_storage.save(file.name,file)
+
+    return JsonResponse(file_name,safe=False)
