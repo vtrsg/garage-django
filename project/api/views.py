@@ -1,12 +1,10 @@
-from django.shortcuts import get_object_or_404, render
+from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.http.response import JsonResponse
-from django.core.files.storage import default_storage
-
 from rest_framework.parsers import JSONParser
 
+import os
 
-from .utils import save_car_images
 from .models import (
     User,
     Brand,
@@ -185,34 +183,7 @@ def CarApi(req, id=0):
 
         return JsonResponse(cars_serializer.data, safe=False)    
     elif req.method == 'POST':
-        car_data = {
-            'Name': req.POST.get('Name', ''),
-            'Brand': req.POST.get('Brand', ''),
-            'Model': req.POST.get('Model', ''),
-            'Year': req.POST.get('Year', ''),
-            'Location': req.POST.get('Location', ''),
-            'Transmission': req.POST.get('Transmission', ''),
-            'Price': req.POST.get('Price', ''),
-            'DiscountPrice': req.POST.get('DiscountPrice', ''),
-            'Mileage': req.POST.get('Mileage', ''),
-            'Color': req.POST.get('Color', ''),
-            'Seat': req.POST.get('Seat', ''),
-            'Fuel': req.POST.get('Fuel', ''),
-            'User': req.POST.get('User', ''),
-        }
-
-        car_images = {
-            'front': req.FILES.get('front', None),
-            'left': req.FILES.get('left', None),
-            'right': req.FILES.get('right', None),
-            'back': req.FILES.get('back', None),
-            'inside': req.FILES.get('inside', None),
-        }
-
-        car_folder = save_car_images(car_data, car_images) 
-        car_data['ImageFile'] = car_folder
-        
-        car_data = {key: value for key, value in car_data.items() if value}
+        car_data = JSONParser().parse(req)
         
         car_serializer = CarSerializer(data=car_data, partial=True)
         if car_serializer.is_valid():
@@ -245,7 +216,29 @@ def CarApi(req, id=0):
     
 @csrf_exempt
 def SaveFile(req):
-    file=req.FILES['uploadedFile']
-    file_name = default_storage.save(file.name,file)
+    car_images = {
+        'front': req.FILES.get('front', None),
+        'left': req.FILES.get('left', None),
+        'right': req.FILES.get('right', None),
+        'back': req.FILES.get('back', None),
+        'inside': req.FILES.get('inside', None),
+    }
 
-    return JsonResponse(file_name,safe=False)
+    # Pegar o ID e o nome do carro na requisição
+    user_id = "1"  
+    car_name = "carro novo".replace(" ", "-")  
+    car_folder = f'{user_id}/{car_name}'
+
+    for image_name, image_file in car_images.items():
+        if image_file is not None:
+            file_extension = os.path.splitext(image_file.name)[1]
+            new_file_name = f"{image_name}{file_extension}"
+
+            destination_path = os.path.join(settings.MEDIA_ROOT, car_folder, new_file_name)
+
+            os.makedirs(os.path.dirname(destination_path), exist_ok=True)
+
+            with open(destination_path, 'wb+') as destination:
+                for chunk in image_file.chunks():
+                    destination.write(chunk)
+    return JsonResponse({'success': 'Car images saved successfully'})
